@@ -12,10 +12,11 @@
 ##                                                             ##
 ## And computes the total results of the student election      ##
 ## using a 50-50 weighting of staff and student votes.         ##
-## Staff votes are duplicated in a list containing total votes ##
-## for all categories, and then preferential voting is used to ##
-## reduce candidates down to the final two candidates, which   ##
-## are then printed to a csv folder titled:                    ##
+## Preferential voting is used to remove the lowest voted can- ##
+## didate, and the intermediary counts are stored in a csv     ##
+## file titled 'audit.csv'. This process continues until the   ##
+## selection is narrowed down to the final two candidates for  ##
+## each position, which are then printed to a csv file titled: ##
 ##                                                             ##
 ## - electionresults.csv                                       ##
 ##                                                             ##
@@ -25,7 +26,7 @@
 ## Date Created: Sept 4th 2024                                 ##
 ##                                                             ##
 ## Last Modified by: Dr Kurt Williams                          ##
-## Date Modified: Sept 5th 2024                                ##
+## Date Modified: Sept 20th 2024                               ##
 ##                                                             ##
 #################################################################
 
@@ -73,8 +74,8 @@ len_snrtable = len(snrtable)
 
 jnrVotes = [[] for i in range(num_jnrRoles)] #table for junior votes
 snrVotes = [[] for i in range(num_snrRoles)] #table for senior votes
-staffjnrVotes = [[] for i in range(num_jnrRoles)]
-staffsnrVotes = [[] for i in range(num_snrRoles)]
+staffjnrVotes = [[] for i in range(num_jnrRoles)] #table for junior staff votes
+staffsnrVotes = [[] for i in range(num_snrRoles)] #table for senior staff votes
 jnrDict = [{} for i in range(num_jnrRoles)] #dictionary for tabulating jnr votes
 snrDict = [{} for i in range(num_snrRoles)] #dictionary for tabulating jnr votes
 
@@ -154,13 +155,21 @@ def listpop(studvotes,name,staffvotes):
 ##       ACTUALLY RUN THE PROGRAM       ##
 ##########################################
 
+auditscore = open('audit.csv','w')
+
 for i in range(0,num_jnrRoles):
+    auditscore.write(str(jnrRoles[i]))
+    auditscore.write('\n')
     jnrDict[i] = makedicts(jnrVotes[i],jnrDict[i])
     jnrDict[i] = countvotes(jnrVotes[i],
                             jnrDict[i],
                             staffjnrVotes[i],
                             jnrStaffWeight[i])
+    j=0
     while (len(jnrDict[i]) > 2):
+        auditscore.write('round ' + str(j) + '\n')
+        auditscore.write(str(jnrDict[i]))
+        auditscore.write('\n')
         jnrVotes[i],staffjnrVotes[i] = removemin(jnrVotes[i],
                                                  jnrDict[i],
                                                  staffjnrVotes[i])
@@ -171,14 +180,22 @@ for i in range(0,num_jnrRoles):
                                 jnrDict[i],
                                 staffjnrVotes[i],
                                 jnrStaffWeight[i])
+        j+=1
+
 collegeexec = []
 for i in range(0,2):
+    auditscore.write(str(snrRoles[i]))
+    auditscore.write('\n')
     snrDict[i] = makedicts(snrVotes[i],snrDict[i])
     snrDict[i] = countvotes(snrVotes[i],
                             snrDict[i],
                             staffsnrVotes[i],
                             snrStaffWeight[i])
+    j=0
     while (len(snrDict[i]) > 2):
+        auditscore.write('round ' + str(j) + '\n')
+        auditscore.write(str(snrDict[i]))
+        auditscore.write('\n')
         snrVotes[i],staffsnrVotes[i] = removemin(snrVotes[i],
                                              snrDict[i],
                                              staffsnrVotes[i])
@@ -189,18 +206,25 @@ for i in range(0,2):
                                 snrDict[i],
                                 staffsnrVotes[i],
                                 snrStaffWeight[i])
+        j+=1
     for key in snrDict[i].keys():
         collegeexec.append(key)
         
 for i in range(2,num_snrRoles):
     for j in range(0,len(collegeexec)):
         snrVotes[i],staffsnrVotes[i] = listpop(snrVotes[i],collegeexec[j],staffsnrVotes[i])
+    auditscore.write(str(snrRoles[i]))
+    auditscore.write('\n')
     snrDict[i] = makedicts(snrVotes[i],snrDict[i])
     snrDict[i] = countvotes(snrVotes[i],
                             snrDict[i],
                             staffsnrVotes[i],
                             snrStaffWeight[i])
+    j=0
     while (len(snrDict[i]) > 2):
+        auditscore.write('round ' + str(j) + '\n')
+        auditscore.write(str(snrDict[i]))
+        auditscore.write('\n')
         snrVotes[i],staffsnrVotes[i] = removemin(snrVotes[i],
                                              snrDict[i],
                                              staffsnrVotes[i])
@@ -211,7 +235,10 @@ for i in range(2,num_snrRoles):
                                 snrDict[i],
                                 staffsnrVotes[i],
                                 snrStaffWeight[i])
-    
+        j+=1
+        
+auditscore.close()
+        
 ##########################################
 ##           PRINT THE OUTPUT           ##
 ##########################################
